@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Picture Frame Calculator</title>
+    <style>
+        :root {
+            --primary-color: #3a5a40;
+            --secondary-color: #a3b18a;
+            --accent-color: #588157;
+            --background-color: #fefae0;
+            --text-color: #344e41;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+
+        .subtitle {
+            color: var(--accent-color);
+            font-size: 1.2rem;
+        }
+
+        .calculator-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .input-section {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px var(--shadow-color);
+        }
+
+        .visualization-section {
+            flex: 2;
+            min-width: 450px;
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--secondary-color);
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--accent-color);
+            outline: none;
+        }
+
+        .unit {
+            color: var(--accent-color);
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-color);
+        }
+
+        .frame-display {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            position: relative;
+            padding: 40px;
+        }
+
+        .frame {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .frame-pieces {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Fixed frame piece styling */
+        .frame-piece {
+            position: absolute;
+            background-color: var(--primary-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .top-piece, .bottom-piece {
+            width: 100%;
+            height: 20px;
+            left: 0;
+        }
+        
+        .left-piece, .right-piece {
+            height: 100%;
+            width: 20px;
+            top: 0;
+        }
+        
+        .top-piece {
+            top: 0;
+        }
+        
+        .bottom-piece {
+            bottom: 0;
+        }
+        
+        .left-piece {
+            left: 0;
+        }
+        
+        .right-piece {
+            right: 0;
+        }
+        
+        /* Fixed 45-degree miter cuts */
+        .miter-cut {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+        }
+        
+        /* Remove diamond shapes */
+        .top-piece::before, .top-piece::after,
+        .bottom-piece::before, .bottom-piece::after,
+        .left-piece::before, .left-piece::after,
+        .right-piece::before, .right-piece::after {
+            display: none;
+        }
+        
+        /* Add proper 45-degree cut lines with different color */
+        .miter-line {
+            position: absolute;
+            background-color: #ff5733; /* Bright orange for high contrast */
+            transform-origin: center;
+            z-index: 5;
+            height: 3px; /* Make them a bit thicker for visibility */
+        }
+        
+        /* Top-left miter line */
+        .top-left-miter {
+            top: 0;
+            left: 0;
+            width: 28px; /* Adjusted for 45 degrees */
+            height: 2px;
+            transform: rotate(45deg);
+            transform-origin: top left;
+        }
+        
+        /* Top-right miter line */
+        .top-right-miter {
+            top: 0;
+            right: 0;
+            width: 28px;
+            height: 2px;
+            transform: rotate(-45deg);
+            transform-origin: top right;
+        }
+        
+        /* Bottom-left miter line */
+        .bottom-left-miter {
+            bottom: 0;
+            left: 0;
+            width: 28px;
+            height: 2px;
+            transform: rotate(-45deg);
+            transform-origin: bottom left;
+        }
+        
+        /* Bottom-right miter line */
+        .bottom-right-miter {
+            bottom: 0;
+            right: 0;
+            width: 28px;
+            height: 2px;
+            transform: rotate(45deg);
+            transform-origin: bottom right;
+        }
+        
+        .artwork {
+            background-color: #f9f9f9;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #999;
+            font-style: italic;
+            position: relative;
+            z-index: -1;
+        }
+
+        /* Improved dimension labels with arrows */
+        .dimension-label {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 10;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 4px 8px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        /* Dimension measurement arrows */
+        .dimension-arrow {
+            position: absolute;
+            background-color: #666;
+            z-index: 15;
+            pointer-events: none;
+        }
+        
+        /* Horizontal arrows */
+        .width-arrow {
+            height: 1px;
+        }
+        
+        /* Vertical arrows */
+        .height-arrow {
+            width: 1px;
+        }
+        
+        /* Inside arrows - thinner and lighter */
+        .inside-width-arrow, .inside-height-arrow {
+            background-color: rgba(102, 102, 102, 0.5);
+        }
+        
+        /* Outside arrows - normal weight */
+        .outside-width-arrow, .outside-height-arrow {
+            background-color: #666;
+        }
+        
+        /* Arrow endpoints */
+        .dimension-arrow::before,
+        .dimension-arrow::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-style: solid;
+            border-color: inherit;
+        }
+        
+        /* Hide original arrows that would cause overlap */
+        .dimension-arrow.inside-height-arrow::before,
+        .dimension-arrow.inside-height-arrow::after,
+        .dimension-arrow.inside-width-arrow::before,
+        .dimension-arrow.inside-width-arrow::after {
+            display: none;
+        }
+        
+        .dimension-arrow::before,
+        .dimension-arrow::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-style: solid;
+            border-color: #666;
+        }
+        
+        .dimension-arrow::before {
+            left: 0;
+        }
+        
+        .dimension-arrow::after {
+            right: 0;
+        }
+        
+        /* Horizontal arrows */
+        .width-arrow {
+            width: calc(100% - 10px);
+            left: 5px;
+        }
+        
+        .width-arrow::before {
+            border-width: 0 0 1px 1px;
+            transform: rotate(45deg);
+            left: -3px;
+            top: -3px;
+        }
+        
+        .width-arrow::after {
+            border-width: 0 1px 1px 0;
+            transform: rotate(-45deg);
+            right: -3px;
+            top: -3px;
+        }
+        
+        /* Vertical arrows */
+        .height-arrow {
+            width: 1px;
+            height: calc(100% - 10px);
+            top: 5px;
+        }
+        
+        .height-arrow::before {
+            border-width: 1px 0 0 1px;
+            transform: rotate(45deg);
+            left: -3px;
+            top: -3px;
+        }
+        
+        .height-arrow::after {
+            border-width: 0 1px 1px 0;
+            transform: rotate(-45deg);
+            left: -3px;
+            bottom: -3px;
+        }
+        
+        /* Completely repositioned dimension labels */
+        .dimension-label {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 30;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 4px 8px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            pointer-events: none; /* Prevents interaction issues */
+        }
+        
+        /* Inside dimensions - always inside the frame */
+        .inside-width-label {
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.85);
+            color: #333;
+        }
+        
+        .inside-height-label {
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -130%);
+            background-color: rgba(255, 255, 255, 0.85);
+            color: #333;
+        }
+        
+        /* Outside dimensions - always outside the frame */
+        .outside-width-label {
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .outside-height-label {
+            top: 50%;
+            right: -120px;
+            transform: translateY(-50%);
+        }
+
+        .result-section {
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .result-card h3 {
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .dimension-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .dimension-box {
+            background-color: white;
+            color: var(--primary-color);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 3px 8px var(--shadow-color);
+        }
+
+        .dimension-box p {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .dimension-box span {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--accent-color);
+            margin-top: 5px;
+        }
+
+        .diagram {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        /* Responsive adjustments for mobile */
+        @media (max-width: 768px) {
+            .calculator-container {
+                flex-direction: column;
+            }
+            
+            .visualization-section {
+                min-height: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Picture Frame Calculator</h1>
+            <p class="subtitle">Design the perfect frame for your artwork</p>
+        </header>
+
+        <div class="calculator-container">
+            <div class="input-section">
+                <h2>Artwork Dimensions</h2>
+                <form id="frame-form">
+                    <div class="form-group">
+                        <label for="artwork-width">Width <span class="unit">(inches)</span></label>
+                        <input type="number" id="artwork-width" min="1" step="0.25" value="24">
+                    </div>
+                    <div class="form-group">
+                        <label for="artwork-height">Height <span class="unit">(inches)</span></label>
+                        <input type="number" id="artwork-height" min="1" step="0.25" value="36">
+                    </div>
+                    <div class="form-group">
+                        <label for="frame-thickness">Frame Thickness <span class="unit">(inches)</span></label>
+                        <input type="number" id="frame-thickness" min="0.5" max="5" step="0.25" value="1.5">
+                    </div>
+                    <button type="button" class="btn" id="calculate-btn">Calculate Frame</button>
+                </form>
+            </div>
+
+            <div class="visualization-section">
+                <h2>Frame Visualization</h2>
+                <div class="frame-display">
+                    <div class="frame" id="frame">
+                        <div class="artwork" id="artwork">Your Artwork</div>
+                        <div class="frame-pieces">
+                            <div class="frame-piece top-piece" id="frame-top">
+                                <span id="top-measure">27"</span>
+                                <!-- Add miter lines -->
+                                <div class="miter-line top-left-miter"></div>
+                                <div class="miter-line top-right-miter"></div>
+                            </div>
+                            <div class="frame-piece bottom-piece" id="frame-bottom">
+                                <span id="bottom-measure">27"</span>
+                                <!-- Add miter lines -->
+                                <div class="miter-line bottom-left-miter"></div>
+                                <div class="miter-line bottom-right-miter"></div>
+                            </div>
+                            <div class="frame-piece left-piece" id="frame-left">
+                                <span id="left-measure">39"</span>
+                                <!-- Add miter lines -->
+                                <div class="miter-line top-left-miter"></div>
+                                <div class="miter-line bottom-left-miter"></div>
+                            </div>
+                            <div class="frame-piece right-piece" id="frame-right">
+                                <span id="right-measure">39"</span>
+                                <!-- Add miter lines -->
+                                <div class="miter-line top-right-miter"></div>
+                                <div class="miter-line bottom-right-miter"></div>
+                            </div>
+                        </div>
+                        <!-- Inside dimension labels with arrows -->
+                        <div class="dimension-label inside-width-label" id="inside-width-label">Inside Width: 24"</div>
+                        <div class="dimension-label inside-height-label" id="inside-height-label">Inside Height: 36"</div>
+                        
+                        <!-- Outside dimension labels with arrows -->
+                        <div class="dimension-label outside-width-label" id="outside-width-label">Outside Width: 27"</div>
+                        <div class="dimension-label outside-height-label" id="outside-height-label">Outside Height: 39"</div>
+                        
+                        <!-- Dimension arrows -->
+                        <div class="dimension-arrow width-arrow inside-width-arrow" id="inside-width-arrow"></div>
+                        <div class="dimension-arrow height-arrow inside-height-arrow" id="inside-height-arrow"></div>
+                        <div class="dimension-arrow width-arrow outside-width-arrow" id="outside-width-arrow"></div>
+                        <div class="dimension-arrow height-arrow outside-height-arrow" id="outside-height-arrow"></div>
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="result-card">
+                        <h3>Frame Pieces (with 45° miter cuts)</h3>
+                        <div class="dimension-group">
+                            <div class="dimension-box">
+                                <p id="top-piece">27"</p>
+                                <span>Top Piece (Width)</span>
+                            </div>
+                            <div class="dimension-box">
+                                <p id="side-piece">39"</p>
+                                <span>Side Pieces (Height)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                        <h3>Frame Dimensions</h3>
+                        <div class="dimension-group">
+                            <div class="dimension-box">
+                                <p id="inside-dims">24" × 36"</p>
+                                <span>Inside Dimensions</span>
+                            </div>
+                            <div class="dimension-box">
+                                <p id="outside-dims">27" × 39"</p>
+                                <span>Outside Dimensions</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get form elements
+            const artworkWidthInput = document.getElementById('artwork-width');
+            const artworkHeightInput = document.getElementById('artwork-height');
+            const frameThicknessInput = document.getElementById('frame-thickness');
+            const calculateBtn = document.getElementById('calculate-btn');
+            
+            // Get display elements
+            const frame = document.getElementById('frame');
+            const artwork = document.getElementById('artwork');
+            const topPiece = document.getElementById('top-piece');
+            const sidePiece = document.getElementById('side-piece');
+            const insideDims = document.getElementById('inside-dims');
+            const outsideDims = document.getElementById('outside-dims');
+            
+            // Initialize with default values
+            updateCalculations();
+            
+            // Add event listeners
+            calculateBtn.addEventListener('click', updateCalculations);
+            
+            // Also update on input changes
+            artworkWidthInput.addEventListener('input', updateCalculations);
+            artworkHeightInput.addEventListener('input', updateCalculations);
+            frameThicknessInput.addEventListener('input', updateCalculations);
+            
+            function updateCalculations() {
+                // Get input values
+                const artworkWidth = parseFloat(artworkWidthInput.value) || 24;
+                const artworkHeight = parseFloat(artworkHeightInput.value) || 36;
+                const frameThickness = parseFloat(frameThicknessInput.value) || 1.5;
+                
+                // Calculate frame dimensions
+                const outsideWidth = artworkWidth + (frameThickness * 2);
+                const outsideHeight = artworkHeight + (frameThickness * 2);
+                // Scale the visualization to fit the container
+                const maxDisplaySize = 400; // Maximum size in pixels for visualization
+                const aspectRatio = artworkWidth / artworkHeight;
+                let displayWidth, displayHeight;
+                
+                if (aspectRatio >= 1) {
+                    // Wider than tall
+                    displayWidth = Math.min(maxDisplaySize, artworkWidth * 10);
+                    displayHeight = displayWidth / aspectRatio;
+                } else {
+                    // Taller than wide
+                    displayHeight = Math.min(maxDisplaySize, artworkHeight * 10);
+                    displayWidth = displayHeight * aspectRatio;
+                }
+                
+                // Set the artwork size
+                artwork.style.width = `${displayWidth}px`;
+                artwork.style.height = `${displayHeight}px`;
+                
+                // Calculate frame pieces dimensions
+                const scaleFactor = displayWidth / artworkWidth; // How many pixels per inch
+                const displayFrameThickness = frameThickness * scaleFactor;
+                
+                // Get frame pieces elements
+                const frameTop = document.getElementById('frame-top');
+                const frameBottom = document.getElementById('frame-bottom');
+                const frameLeft = document.getElementById('frame-left');
+                const frameRight = document.getElementById('frame-right');
+                
+                // Set frame size - adding buffer for the frame thickness
+                frame.style.width = `${displayWidth + (displayFrameThickness * 2)}px`;
+                frame.style.height = `${displayHeight + (displayFrameThickness * 2)}px`;
+                
+                // Properly position and size the artwork
+                artwork.style.position = 'absolute';
+                artwork.style.top = `${displayFrameThickness}px`;
+                artwork.style.left = `${displayFrameThickness}px`;
+                artwork.style.width = `${displayWidth}px`;
+                artwork.style.height = `${displayHeight}px`;
+                
+                // Size and position for top and bottom pieces
+                frameTop.style.width = `${displayWidth + (displayFrameThickness * 2)}px`;
+                frameTop.style.height = `${displayFrameThickness}px`;
+                frameTop.style.top = '0';
+                
+                frameBottom.style.width = `${displayWidth + (displayFrameThickness * 2)}px`;
+                frameBottom.style.height = `${displayFrameThickness}px`;
+                frameBottom.style.bottom = '0';
+                
+                // Size and position for left and right pieces
+                frameLeft.style.height = `${displayHeight + (displayFrameThickness * 2)}px`;
+                frameLeft.style.width = `${displayFrameThickness}px`;
+                frameLeft.style.left = '0';
+                
+                frameRight.style.height = `${displayHeight + (displayFrameThickness * 2)}px`;
+                frameRight.style.width = `${displayFrameThickness}px`;
+                frameRight.style.right = '0';
+                
+                // Adjust miter line length based on frame thickness
+                const miterLines = document.querySelectorAll('.miter-line');
+                const miterLength = Math.sqrt(2 * (displayFrameThickness * displayFrameThickness));
+                
+                miterLines.forEach(line => {
+                    line.style.width = `${miterLength}px`;
+                    // Make sure they're on top of the frame pieces
+                    line.style.zIndex = '20'; 
+                });
+                
+                // Add measurements to the frame pieces
+                document.getElementById('top-measure').textContent = `${outsideWidth.toFixed(1)}"`;
+                document.getElementById('bottom-measure').textContent = `${outsideWidth.toFixed(1)}"`;
+                document.getElementById('left-measure').textContent = `${outsideHeight.toFixed(1)}"`;
+                document.getElementById('right-measure').textContent = `${outsideHeight.toFixed(1)}"`;
+                
+                // Style the text in the frame pieces for better visibility
+                const framePieces = document.querySelectorAll('.frame-piece span');
+                framePieces.forEach(piece => {
+                    piece.style.color = 'white';
+                    piece.style.fontSize = '0.8rem';
+                    piece.style.fontWeight = 'bold';
+                    piece.style.position = 'absolute';
+                });
+                
+                // Position the text better for each piece
+                document.getElementById('top-measure').style.top = '2px';
+                document.getElementById('top-measure').style.left = '50%';
+                document.getElementById('top-measure').style.transform = 'translateX(-50%)';
+                
+                document.getElementById('bottom-measure').style.bottom = '2px';
+                document.getElementById('bottom-measure').style.left = '50%';
+                document.getElementById('bottom-measure').style.transform = 'translateX(-50%)';
+                
+                document.getElementById('left-measure').style.transform = 'rotate(-90deg)';
+                document.getElementById('left-measure').style.left = '-10px';
+                document.getElementById('left-measure').style.top = '50%';
+                document.getElementById('left-measure').style.transform = 'rotate(-90deg) translateX(-50%)';
+                
+                document.getElementById('right-measure').style.transform = 'rotate(90deg)';
+                document.getElementById('right-measure').style.right = '-10px';
+                document.getElementById('right-measure').style.top = '50%';
+                document.getElementById('right-measure').style.transform = 'rotate(90deg) translateX(50%)';
+                
+                // Update the dimension labels
+                const insideWidthLabel = document.getElementById('inside-width-label');
+                const insideHeightLabel = document.getElementById('inside-height-label');
+                const outsideWidthLabel = document.getElementById('outside-width-label');
+                const outsideHeightLabel = document.getElementById('outside-height-label');
+                
+                // Update dimensions text
+                insideWidthLabel.textContent = `Inside Width: ${artworkWidth.toFixed(1)}"`;
+                insideHeightLabel.textContent = `Inside Height: ${artworkHeight.toFixed(1)}"`;
+                outsideWidthLabel.textContent = `Outside Width: ${outsideWidth.toFixed(1)}"`;
+                outsideHeightLabel.textContent = `Outside Height: ${outsideHeight.toFixed(1)}"`;
+                
+                // Position inside width label in center of artwork
+                insideWidthLabel.style.left = `${displayFrameThickness + (displayWidth/2)}px`;
+                insideWidthLabel.style.top = `${displayFrameThickness + (displayHeight/2) + 25}px`;
+                insideWidthLabel.style.transform = 'translate(-50%, 0)';
+                
+                // Position inside height label above the width label
+                insideHeightLabel.style.left = `${displayFrameThickness + (displayWidth/2)}px`;
+                insideHeightLabel.style.top = `${displayFrameThickness + (displayHeight/2) - 25}px`;
+                insideHeightLabel.style.transform = 'translate(-50%, 0)';
+                
+                // Make sure outside width label is properly below the frame
+                outsideWidthLabel.style.left = `${displayWidth/2 + displayFrameThickness}px`;
+                outsideWidthLabel.style.bottom = `-50px`;
+                outsideWidthLabel.style.transform = 'translateX(-50%)';
+                
+                // Make sure outside height label is properly to the right - fix overlap
+                outsideHeightLabel.style.top = `${displayHeight/2 + displayFrameThickness}px`;
+                outsideHeightLabel.style.right = `-140px`;
+                outsideHeightLabel.style.transform = 'translateY(-50%)';
+                
+                // Position and size the dimension arrows
+                const insideWidthArrow = document.getElementById('inside-width-arrow');
+                const insideHeightArrow = document.getElementById('inside-height-arrow');
+                const outsideWidthArrow = document.getElementById('outside-width-arrow');
+                const outsideHeightArrow = document.getElementById('outside-height-arrow');
+                
+                // Inside width arrow (horizontal) - inside the frame
+                insideWidthArrow.style.height = '1px';
+                insideWidthArrow.style.top = `${displayFrameThickness + (displayHeight/2) + 20}px`;
+                insideWidthArrow.style.left = `${displayFrameThickness + 10}px`;
+                insideWidthArrow.style.width = `${displayWidth - 20}px`;
+                
+                // Inside height arrow (vertical) - inside the frame
+                insideHeightArrow.style.width = '1px';
+                insideHeightArrow.style.left = `${displayFrameThickness + (displayWidth/2) + 20}px`;
+                insideHeightArrow.style.top = `${displayFrameThickness + 10}px`;
+                insideHeightArrow.style.height = `${displayHeight - 20}px`;
+                
+                // Outside width arrow (horizontal) - below the frame
+                outsideWidthArrow.style.height = '1px';
+                outsideWidthArrow.style.top = `${displayFrameThickness * 2 + displayHeight + 20}px`;
+                outsideWidthArrow.style.left = '0';
+                outsideWidthArrow.style.width = `${displayWidth + displayFrameThickness * 2}px`;
+                
+                // Outside height arrow (vertical) - right of the frame
+                outsideHeightArrow.style.width = '1px';
+                outsideHeightArrow.style.left = 'auto';
+                outsideHeightArrow.style.right = `-60px`;
+                outsideHeightArrow.style.top = '0';
+                outsideHeightArrow.style.height = `${displayHeight + displayFrameThickness * 2}px`;
+                
+                // Update the results
+                topPiece.textContent = `${outsideWidth.toFixed(2)}"`;
+                sidePiece.textContent = `${outsideHeight.toFixed(2)}"`;
+                insideDims.textContent = `${artworkWidth.toFixed(2)}" × ${artworkHeight.toFixed(2)}"`;
+                outsideDims.textContent = `${outsideWidth.toFixed(2)}" × ${outsideHeight.toFixed(2)}"`;
+            }
+        });
+    </script>
+</body>
+</html>
